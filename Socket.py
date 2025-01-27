@@ -117,6 +117,23 @@ def dashboard():
         print(f"\r[INFO] Gesendete Pakete: {packet_counter} | Paketrate: {rate:.2f}/s", end="")
         time.sleep(1)
 
+# Dashboard-Funktion
+def start_dashboard(packet_counter, stop_event):
+    def dashboard():
+        start_time = time.time()
+        while not stop_event.is_set():
+            elapsed = time.time() - start_time
+            rate = packet_counter[0] / elapsed if elapsed > 0 else 0
+            print(f"\r[INFO] Gesendete Pakete: {packet_counter[0]} | Paketrate: {rate:.2f}/s", end="")
+            time.sleep(1)
+
+    dashboard_thread = threading.Thread(target=dashboard)
+    dashboard_thread.start()
+    return dashboard_thread
+
+def stop_dashboard(dashboard_thread):
+    dashboard_thread.join()
+
 # Hauptprogramm
 if __name__ == "__main__":
     color = choose_color()
@@ -133,8 +150,6 @@ if __name__ == "__main__":
             sys.exit()
 
         elif choice == "1":  # UDP Flood
-            from udp_flood import udp_flood_attack
-
             ip = input("Ziel-IP-Adresse: ")
             port = int(input("Ziel-Port: "))
             duration = int(input("Dauer des Angriffs (Sekunden): "))
@@ -143,12 +158,9 @@ if __name__ == "__main__":
             packet_rate = max(1, int(input("Maximale Pakete pro Sekunde (min. 1): ")))
 
             stop_event.clear()
-
             udp_flood_attack(ip, port, packet_size, packet_rate, threads, duration)
 
         elif choice == "2":  # Slowloris (TCP Keep-Alive)
-            from slowloris import slowloris_attack
-
             ip = input("Ziel-IP-Adresse: ")
             port = int(input("Ziel-Port: "))
             duration = int(input("Dauer des Angriffs (Sekunden): "))
@@ -157,7 +169,6 @@ if __name__ == "__main__":
 
         else:
             print("[INFO] Ungültige Auswahl, bitte erneut versuchen.")
-
             # Threads starten
             attack_threads = [
                 threading.Thread(target=slowloris, args=(ip, port))
@@ -165,23 +176,6 @@ if __name__ == "__main__":
             ]
             for thread in attack_threads:
                 thread.start()
-
-            # Dashboard starten
-            def start_dashboard(packet_counter, stop_event):
-    def dashboard():
-        start_time = time.time()
-        while not stop_event.is_set():
-            elapsed = time.time() - start_time
-            rate = packet_counter[0] / elapsed if elapsed > 0 else 0
-            print(f"\r[INFO] Gesendete Pakete: {packet_counter[0]} | Paketrate: {rate:.2f}/s", end="")
-            time.sleep(1)
-
-    dashboard_thread = threading.Thread(target=dashboard)
-    dashboard_thread.start()
-    return dashboard_thread
-
-def stop_dashboard(dashboard_thread):
-    dashboard_thread.join()
 
             input("\n[INFO] Drücke ENTER, um den Angriff zu stoppen.\n")
             stop_event.set()
