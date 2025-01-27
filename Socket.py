@@ -144,6 +144,8 @@ if __name__ == "__main__":
 
             stop_event.clear()
 
+            udp_flood_attack(ip, port, packet_size, packet_rate, threads, duration)
+
         elif choice == "2":  # Slowloris (TCP Keep-Alive)
             from slowloris import slowloris_attack
 
@@ -153,7 +155,8 @@ if __name__ == "__main__":
             threads = int(input("Anzahl der Threads: "))
             slowloris_attack(ip, port, threads, duration)
 
-            stop_event.clear()
+        else:
+            print("[INFO] Ungültige Auswahl, bitte erneut versuchen.")
 
             # Threads starten
             attack_threads = [
